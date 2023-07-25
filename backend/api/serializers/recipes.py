@@ -107,7 +107,6 @@ class AddIngredientSerializer(serializers.ModelSerializer):
     """Сериализатор для добавления ингредиентов."""
     id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all(),
-
     )
 
     class Meta:

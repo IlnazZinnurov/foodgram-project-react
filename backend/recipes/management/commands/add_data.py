@@ -1,8 +1,11 @@
+import csv
 import logging
+import os
 import sys
-from csv import DictReader
 
+from django.conf import settings
 from django.core.management import BaseCommand
+
 from recipes.models import Ingredient, Tag
 
 logger = logging.getLogger(__name__)
@@ -14,48 +17,47 @@ formatter = logging.Formatter(
 )
 handler.setFormatter(formatter)
 
+DATA_ROOT = os.path.join(settings.BASE_DIR, 'data')
+
 
 class Command(BaseCommand):
     help = 'Загрузка данных в БД'
 
-    def handle(self, *args, **options):
-        logger.info('Удаление данных в таблице Ингридиенты')
-        Ingredient.objects.all().delete()
+    def add_arguments(self, parser):
+        parser.add_argument('ingredients_file', type=str)
+        parser.add_argument('tags_file', type=str)
 
-        logger.info('Загрузка ингридиентов в БД')
-        ingredients = []
-        for row in DictReader(
-            open('./data/ingredients.csv', encoding='utf-8'),
-            ['name', 'measurement_unit']
-        ):
-            ingredients.append(
-                Ingredient(
-                    name=row['name'],
-                    measurement_unit=row['measurement_unit'],
-                )
-            )
+    def handle(self, ingredients_file, tags_file, *args, **options):
 
-        Ingredient.objects.bulk_create(ingredients)
+        to_elaborate = [
+            {'model': Ingredient,
+             'file_name': ingredients_file,
+             'verbose_name': "Ингредиенты"},
+            {'model': Tag,
+             'file_name': tags_file,
+             'verbose_name': "Теги"
+             },
+        ]
 
-        logger.info('Загрузка ингридиентов в БД завершена')
+        for element in to_elaborate:
+            model = element['model']
+            file_name = element['file_name']
+            verbose_name = element['verbose_name']
 
-        logger.info('Удаление данных в таблице Теги')
-        Tag.objects.all().delete()
+            logger.info(f'Удаление данных в таблице {verbose_name}')
+            model.objects.all().delete()
 
-        logger.info('Загрузка тегов в БД')
-        tags = []
-        for row in DictReader(
-            open('./data/tags.csv', encoding='utf-8'),
-            ['name', 'color', 'slug']
-        ):
-            tags.append(
-                Tag(
-                    name=row['name'],
-                    color=row['color'],
-                    slug=row['slug'],
-                )
-            )
+            logger.info(f'Началась загрузка таблицу {verbose_name}')
+            items = []
+            with open(os.path.join(DATA_ROOT, file_name),
+                      encoding='utf-8') as theFile:
+                reader = csv.DictReader(theFile)
+                for line in reader:
+                    items.append(
+                        model(
+                            **line
+                        )
+                    )
 
-        Tag.objects.bulk_create(tags)
-
-        logger.info('Загрузка тегов в БД завершена')
+            model.objects.bulk_create(items)
+            logger.info(f'Закончилась загрузка в таблицу {verbose_name}')

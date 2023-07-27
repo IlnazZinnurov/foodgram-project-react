@@ -1,16 +1,23 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import mixins, status, viewsets
-from rest_framework.response import Response
-from rest_framework.views import APIView
 
-from api.serializers.recipes import UserSubscribeRepresentSerializer
-from api.serializers.users import UserSubscribeSerializer
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
+from api.serializers.recipes import (UserSubscribeRepresentSerializer,
+                                     UserSubscribeSerializer)
+
 from users.models import Follow, User
 
 
-class UserSubscribeView(APIView):
-    def post(self, request, user_id):
-        author = get_object_or_404(User, id=user_id)
+class UserSubscriptionsViewSet(viewsets.GenericViewSet):
+    """
+    Вьюсет управления подписками
+    """
+
+    @action(detail=True, methods=['post'])
+    def subscribe(self, request, pk=None):
+        author = get_object_or_404(User, pk=pk)
         serializer = UserSubscribeSerializer(
             data={'user': request.user.id, 'author': author.id},
             context={'request': request}
@@ -19,8 +26,9 @@ class UserSubscribeView(APIView):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def delete(self, request, user_id):
-        author = get_object_or_404(User, id=user_id)
+    @subscribe.mapping.delete
+    def unsubscribe(self, request, pk=None):
+        author = get_object_or_404(User, pk=pk)
         if not Follow.objects.filter(
                 user=request.user,
                 author=author
@@ -31,17 +39,16 @@ class UserSubscribeView(APIView):
             )
         Follow.objects.get(
             user=request.user.id,
-            author=user_id
+            author=pk
         ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-class UserSubscriptionsViewSet(mixins.ListModelMixin,
-                               viewsets.GenericViewSet):
-    """
-    Получение списка всех подписок на пользователей.
-    """
-    serializer_class = UserSubscribeRepresentSerializer
-
-    def get_queryset(self):
-        return User.objects.filter(following__user=self.request.user)
+    @action(detail=False)
+    def subscriptions(self, request):
+        authors = User.objects.filter(following__user=self.request.user)
+        page = self.paginate_queryset(authors)
+        serializer = UserSubscribeRepresentSerializer(
+            page,
+            many=True, context={
+                'request': request})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)

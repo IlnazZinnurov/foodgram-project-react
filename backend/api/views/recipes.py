@@ -1,23 +1,32 @@
-from django.db.models import Exists, OuterRef
-from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import (
+    AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly,)
 from rest_framework.response import Response
+
+from django.db.models import Exists, OuterRef
+from django.shortcuts import get_object_or_404
 
 from api.filters import IngredientFilter, RecipeFilter
 from api.pagination import CustomPageNumberPagination
 from api.permissions import IsAuthorOrReadOnly
-from api.serializers.recipes import (FavoriteSerializer,
-                                     FullRecipeInfoSerializer,
-                                     IngredientSerializer, RecipeSerializer,
-                                     ShoppingCartSerializer, TagSerializer)
+from api.serializers.recipes import (
+    FavoriteSerializer,
+    FullRecipeInfoSerializer,
+    IngredientSerializer,
+    RecipeSerializer,
+    ShoppingCartSerializer,
+    TagSerializer,
+)
 from api.utils import create_shopping_cart_file
 from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
 
 
-class ModelFunctionality:
+class RecipeModelMixin:
+    """
+    Миксин для создания и удаления моделей рецептов.
+    """
     def create_model(self, request, instance, serializer_name):
         """Метод для добавления модели."""
         serializer = serializer_name(
@@ -58,15 +67,15 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = None
 
 
-class RecipeViewSet(ModelFunctionality, viewsets.ModelViewSet):
+class RecipeViewSet(RecipeModelMixin, viewsets.ModelViewSet):
     """
     Вьюсет для работы с рецептами.
     Обработка запросов создания/получения/редактирования/удаления рецептов
     Добавление/удаление рецепта в избранное и список покупок.
     """
 
-    permission_classes = (IsAuthorOrReadOnly,)
-    filter_backends = [DjangoFilterBackend]
+    permission_classes = (IsAuthorOrReadOnly, IsAuthenticatedOrReadOnly)
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
     pagination_class = CustomPageNumberPagination
     http_method_names = [
@@ -77,11 +86,11 @@ class RecipeViewSet(ModelFunctionality, viewsets.ModelViewSet):
     ]
 
     def get_queryset(self):
-        qs = Recipe.objects.select_related('author').prefetch_related(
+        queryset = Recipe.objects.select_related('author').prefetch_related(
             'ingredients', 'tags'
         )
         if self.request.user.is_authenticated:
-            qs = qs.annotate(
+            queryset = queryset.annotate(
                 is_favorited=Exists(
                     Favorite.objects.filter(
                         user=self.request.user,
@@ -96,7 +105,7 @@ class RecipeViewSet(ModelFunctionality, viewsets.ModelViewSet):
                 )
             )
 
-        return qs
+        return queryset
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):

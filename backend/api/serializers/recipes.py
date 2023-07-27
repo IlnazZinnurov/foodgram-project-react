@@ -2,13 +2,97 @@ import base64
 
 from django.core.files.base import ContentFile
 from django.db import transaction
-from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
 
-from api.serializers.users import UserGetSerializer
+from djoser.serializers import UserCreateSerializer as DjoserUserSerialiser
+from djoser.serializers import UserSerializer
+
+from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
+
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingCart, Tag)
-from users.models import User
+
+from users.models import Follow, User
+
+# -----------------------------------------------------------------------------
+#                            Приложение users
+# -----------------------------------------------------------------------------
+
+
+class UsersCreateSerializer(DjoserUserSerialiser):
+    """
+    Сериализатор для обработки запросов на создание пользователя.
+    """
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'password'
+        )
+
+
+class UserGetSerializer(UserSerializer):
+    """
+    Сериализатор для отображения информации о пользователе.
+    """
+    is_subscribed = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed'
+        )
+
+    def get_is_subscribed(self, obj):
+        request = self.context.get('request')
+        return (request.user.is_authenticated
+                and Follow.objects.filter(
+                    user=request.user, author=obj
+                ).exists())
+
+
+class UserSubscribeSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для работы с подписками пользователей.
+    """
+    class Meta:
+        model = Follow
+        fields = ('user', 'author',)
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Follow.objects.all(),
+                fields=('user', 'author'),
+                message='Вы уже подписаны на этого пользователя'
+            )
+        ]
+
+    def validate(self, data):
+        request = self.context.get('request')
+        if request.user == data['author']:
+            raise serializers.ValidationError(
+                'Нельзя подписываться на самого себя!'
+            )
+        return data
+
+    def to_representation(self, instance):
+        request = self.context.get('request')
+        return UserSubscribeRepresentSerializer(
+            instance.author, context={'request': request}
+        ).data
+
+
+# -----------------------------------------------------------------------------
+#                            Приложение recipes
+# -----------------------------------------------------------------------------
 
 
 class Base64ImageField(serializers.ImageField):
@@ -235,14 +319,13 @@ class FavoriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favorite
         fields = ('user', 'recipe')
-
-    def validate(self, data):
-        user, recipe = data.get('user'), data.get('recipe')
-        if self.Meta.model.objects.filter(user=user, recipe=recipe).exists():
-            raise ValidationError(
-                {'error': 'Этот рецепт уже добавлен в избранное!'}
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Favorite.objects.all(),
+                fields=('user', 'recipe'),
+                message='Этот рецепт уже добавлен в избранное!'
             )
-        return data
+        ]
 
     def to_representation(self, instance):
         context = {'request': self.context.get('request')}
@@ -256,15 +339,13 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShoppingCart
         fields = ('user', 'recipe')
-
-        def validate(self, data):
-            user, recipe = data.get('user'), data.get('recipe')
-            if self.Meta.model.objects.filter(user=user,
-                                              recipe=recipe).exists():
-                raise ValidationError(
-                    {'error': 'Этот рецепт уже добавлен'}
-                )
-            return data
+        validators = [
+            UniqueTogetherValidator(
+                queryset=ShoppingCart.objects.all(),
+                fields=('user', 'recipe'),
+                message='Этот рецепт уже добавлен'
+            )
+        ]
 
     def to_representation(self, instance):
         request = self.context.get('request')

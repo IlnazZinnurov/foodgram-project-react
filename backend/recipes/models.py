@@ -1,3 +1,4 @@
+from colorfield.fields import ColorField
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import UniqueConstraint
@@ -21,6 +22,7 @@ class Ingredient(models.Model):
     class Meta:
         verbose_name = 'Ингридиенты'
         verbose_name_plural = 'Ингридиенты'
+        ordering = ['name']
 
     def __str__(self):
         return f'{self.name}, {self.measurement_unit}'
@@ -34,11 +36,11 @@ class Tag(models.Model):
         verbose_name='Название тега',
         help_text='Название тега',
     )
-    color = models.CharField(
+    color = ColorField(
         max_length=10,
         unique=True,
         verbose_name='Цвет тега',
-        help_text='Цвет тега',
+        help_text='Цвет тега в формате HEX',
     )
     slug = models.SlugField(
         max_length=50,
@@ -50,6 +52,7 @@ class Tag(models.Model):
     class Meta:
         verbose_name = 'Тег'
         verbose_name_plural = 'Теги'
+        ordering = ['name']
 
     def __str__(self):
         return f'{self.name}'

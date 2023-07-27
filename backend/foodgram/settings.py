@@ -20,6 +20,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'colorfield',
+
     'django_filters',
     'rest_framework',
     'rest_framework.authtoken',
@@ -135,9 +137,9 @@ DJOSER = {
     'LOGIN_FIELD': 'email',
     'HIDE_USERS': False,
     'SERIALIZERS': {
-        'user_create': 'api.serializers.users.UsersCreateSerializer',
-        'user': 'api.serializers.users.UserGetSerializer',
-        'current_user': 'api.serializers.users.UserGetSerializer',
+        'user_create': 'api.serializers.recipes.UsersCreateSerializer',
+        'user': 'api.serializers.recipes.UserGetSerializer',
+        'current_user': 'api.serializers.recipes.UserGetSerializer',
     },
     'PERMISSIONS': {
         'user_list': ['rest_framework.permissions.AllowAny'],

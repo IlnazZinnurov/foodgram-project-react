@@ -1,13 +1,16 @@
-
+import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-+cuv47&u8u=-(x=hwnf8twur2v5)p_%jgg)n&f^u0_(p-pk3eh'
+SECRET_KEY = SECRET_KEY = os.environ.get(
+    "SECRET_KEY",
+    'django-insecure-+cuv47&u8u=-(x=hwnf8twur2v5)p_%jgg)n&f^u0_(p-pk3eh')
 
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get(
+    'ALLOWED_HOSTS', 'foodgram-kazan.myftp.biz,127.0.0.1').split(',')
 
 
 # Application definition
@@ -68,11 +71,14 @@ WSGI_APPLICATION = 'foodgram.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('POSTGRES_DB', 'django'),
+        'USER': os.getenv('POSTGRES_USER', 'django'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', ''),
+        'PORT': os.getenv('DB_PORT', 5432)
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
@@ -114,7 +120,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = '/back_static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'back_static/')
+
+MEDIA_URL = '/back_media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'back_media/')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field

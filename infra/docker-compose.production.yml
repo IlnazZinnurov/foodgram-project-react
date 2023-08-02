@@ -14,7 +14,7 @@ services:
       - ./.env
 
   backend:
-    build: ../backend/
+    image: ilnaz85/foodgram_backend
     restart: always
     volumes:
       -  static_value:/app/back_static/
@@ -25,7 +25,7 @@ services:
       - ./.env
 
   frontend:
-    build: ../frontend/
+    image: ilnaz85/foodgram_frontend
     volumes:
       - ../frontend/:/app/result_build/
     depends_on:

@@ -51,4 +51,4 @@ class UserSubscriptionsViewSet(viewsets.GenericViewSet):
             page,
             many=True, context={
                 'request': request})
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return self.get_paginated_response(serializer.data)

@@ -23,7 +23,7 @@ from api.utils import create_shopping_cart_file
 from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
 
 
-class RecipeModelMixin:
+class RecipeCreateDeleteModelMixin:
     """
     Миксин для создания и удаления моделей рецептов.
     """
@@ -67,7 +67,7 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = None
 
 
-class RecipeViewSet(RecipeModelMixin, viewsets.ModelViewSet):
+class RecipeViewSet(RecipeCreateDeleteModelMixin, viewsets.ModelViewSet):
     """
     Вьюсет для работы с рецептами.
     Обработка запросов создания/получения/редактирования/удаления рецептов

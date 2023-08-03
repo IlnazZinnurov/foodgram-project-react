@@ -58,7 +58,7 @@ DJANGO_SECRET_KEY=
 
 Выполнить команду:
 ```
-docker-compose -f infra/docker-compose.yml up -d
+docker-compose -f docker-compose.production.yml up -d
 ```
 
 ## Документация к проекту.

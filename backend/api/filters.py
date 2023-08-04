@@ -22,22 +22,22 @@ class RecipeFilter(FilterSet):
         lookup_expr='exact'
     )
     is_favorited = filters.BooleanFilter(
-        method='filter_is_favorited'
+        method='filter_favorited_in_shopping'
     )
     is_in_shopping_cart = filters.BooleanFilter(
-        method='filter_is_in_shopping_cart'
+        method='filter_favorited_in_shopping'
     )
 
     class Meta:
         model = Recipe
         fields = ('author', 'tags', 'is_favorited', 'is_in_shopping_cart')
 
-    def filter_is_favorited(self, queryset, name, value):
-        if value and self.request.user.is_authenticated:
-            return queryset.filter(favorites__user=self.request.user)
-        return queryset
+    def filter_favorited_in_shopping(self, queryset, name, value):
+        if name == 'is_favorited':
+            filter_parameters = {"favorited__user": self.request.user}
+        if name == 'filter_favorited_in_shopping':
+            filter_parameters = {"shopping_cart__user": self.request.user}
 
-    def filter_is_in_shopping_cart(self, queryset, name, value):
-        if value and self.request.user.is_authenticated and value:
-            return queryset.filter(shopping_cart__user=self.request.user)
+        if value and self.request.user.is_authenticated:
+            return queryset.filter(**filter_parameters)
         return queryset

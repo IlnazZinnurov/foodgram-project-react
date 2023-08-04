@@ -111,12 +111,13 @@ jobs:
         script: |
           cd foodgram
           cd infra
-          sudo docker system prune -af
-          sudo docker compose -f docker-compose.production.yml pull
           sudo docker compose -f docker-compose.production.yml down
+          sudo docker rm backend
+          sudo docker image rm ilnaz85/foodgram_backend
           sudo docker compose -f docker-compose.production.yml up -d
           sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
           sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic --noinput
+          sudo docker system prune -af
   send_message:
     runs-on: ubuntu-latest
     needs: deploy

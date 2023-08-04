@@ -15,6 +15,7 @@ services:
 
   backend:
     image: ilnaz85/foodgram_backend
+    container_name: backend
     restart: always
     volumes:
       -  static_value:/app/back_static/

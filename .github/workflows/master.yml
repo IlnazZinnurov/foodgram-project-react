@@ -112,6 +112,7 @@ jobs:
           cd foodgram
           cd infra
           sudo docker compose -f docker-compose.production.yml stop
+          sudo docker compose -f docker-compose.production.yml rm -f backend
           sudo docker image rm ilnaz85/foodgram_backend
           sudo docker compose -f docker-compose.production.yml up -d
           sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate

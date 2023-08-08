@@ -207,8 +207,8 @@ class FullRecipeInfoSerializer(serializers.ModelSerializer):
         many=True,
         source='recipe_ingredient'
     )
-    is_favorited = serializers.BooleanField(read_only=True)
-    is_in_shopping_cart = serializers.BooleanField(read_only=True)
+    is_favorited = serializers.SerializerMethodField(read_only=True)
+    is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
     image = Base64ImageField(required=False)
 
     class Meta:
@@ -225,6 +225,18 @@ class FullRecipeInfoSerializer(serializers.ModelSerializer):
             'text',
             'cooking_time'
         )
+
+    def get_is_favorited(self, object):
+        request = self.context.get('request')
+        if not request.user.is_authenticated:
+            return False
+        return object.favorites.filter(user=request.user).exists()
+
+    def get_is_in_shopping_cart(self, object):
+        request = self.context.get('request')
+        if not request.user.is_authenticated:
+            return False
+        return object.shopping_cart.filter(user=request.user).exists()
 
 
 class ShortRecipeInfoSerializer(serializers.ModelSerializer):

@@ -12,7 +12,7 @@ class IngredientInline(TabularInline):
 
 
 class TagInline(TabularInline):
-    model = Tag
+    model = Recipe.tags.through
     extra = 1
     min_num = 1
 
@@ -33,10 +33,6 @@ class TagAdmin(ModelAdmin):
     empty_value_display = settings.EMPTY_VALUE
 
 
-class RecipeIngredientInline(TabularInline):
-    model = RecipeIngredient
-
-
 @register(Recipe)
 class RecipeAdmin(ModelAdmin):
     list_display = (
@@ -47,10 +43,7 @@ class RecipeAdmin(ModelAdmin):
     )
     list_filter = ('name', 'author', 'tags')
     empty_value_display = settings.EMPTY_VALUE
-    inlines = [
-        RecipeIngredientInline,
-        IngredientInline, TagInline
-    ]
+    inlines = [IngredientInline, TagInline]
 
     def favorites_amount(self, obj):
         return obj.favorites.count()

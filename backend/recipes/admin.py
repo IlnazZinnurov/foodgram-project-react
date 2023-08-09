@@ -5,6 +5,18 @@ from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingCart, Tag)
 
 
+class IngredientInline(TabularInline):
+    model = RecipeIngredient
+    extra = 1
+    min_num = 1
+
+
+class TagInline(TabularInline):
+    model = Tag
+    extra = 1
+    min_num = 1
+
+
 @register(Ingredient)
 class IngredientAdmin(ModelAdmin):
     list_display = ('pk', 'name', 'measurement_unit')
@@ -37,6 +49,7 @@ class RecipeAdmin(ModelAdmin):
     empty_value_display = settings.EMPTY_VALUE
     inlines = [
         RecipeIngredientInline,
+        IngredientInline, TagInline
     ]
 
     def favorites_amount(self, obj):

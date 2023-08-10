@@ -35,6 +35,13 @@ class TagAdmin(ModelAdmin):
 
 @register(Recipe)
 class RecipeAdmin(ModelAdmin):
+    fields = (
+        'author',
+        'name',
+        'text',
+        'cooking_time',
+        'image'
+    )
     list_display = (
         'pk',
         'name',
@@ -43,7 +50,9 @@ class RecipeAdmin(ModelAdmin):
     )
     list_filter = ('name', 'author', 'tags')
     empty_value_display = settings.EMPTY_VALUE
-    inlines = [IngredientInline, TagInline]
+    inlines = [IngredientInline,
+               TagInline
+               ]
 
     def favorites_amount(self, obj):
         return obj.favorites.count()
